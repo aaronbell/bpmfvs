@@ -3,7 +3,7 @@ name: Build TTF from JSON
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:
