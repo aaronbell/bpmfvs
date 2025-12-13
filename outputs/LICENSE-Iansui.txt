@@ -1,5 +1,5 @@
 BpmfIansui.ttf	注音芫荽
-Copyright 2022 But Ko
+Copyright 2022 But Ko.
 
 	https://github.com/ButTaiwan/bpmfvs
 
@@ -12,7 +12,6 @@ Bopomofo IVS Font Specification (注音IVS字型規格)
 	Copyright 2020 But Ko
 	Licensed under Apache License, Version 2.0.
 	https://github.com/ButTaiwan/bpmfvs
-
 
 contains Iansui (芫荽).
 	https://github.com/ButTaiwan/iansui

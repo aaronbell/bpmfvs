@@ -10,7 +10,7 @@ Licensed under SIL Open Font License 1.1
 
 Bopomofo IVS Font Specification (注音IVS字型規格)
 	Copyright 2020 But Ko
-	Licensed under Apache License, Version 2.0.
+	Licensed under SIL Open Font License 1.1
 	https://github.com/ButTaiwan/bpmfvs
 
 contains Huninn (粉圓).

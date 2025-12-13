@@ -4,7 +4,8 @@ toolpath = Dir.exists?('d:\fontworks') ? 'd:\fontworks' : 'd:\fontprj'
 $otfccdump = toolpath + '\otfcc\otfccdump.exe'
 $otfccbuild = toolpath + '\otfcc\otfccbuild.exe'
 $ttx = toolpath + '\FDK\Tools\win\ttx'
-$bpmfsrc = 'f_bpmfgen.js'
+$zip = 'C:\Program Files\7-Zip\7z.exe'
+$bpmfsrc = 'f_bpmfgen.json'
 
 $font_vendor = 'But Ko'
 $font_url = 'https://github.com/ButTaiwan/bpmfvs'
@@ -284,7 +285,8 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
 			fnt['glyf'][gn] = g
 			fnt['cmap'][uniDec] = gn
 			$order_sym << gn
-		else									# 半形符號等
+		#else												# 半形符號等
+		elsif !g['references']									# 半形符號等 (排除組合文字)
 			gn = 'uni' + uniHex
 			fnt['glyf'][gn] = g
 			fnt['cmap'][uniDec] = gn
@@ -459,11 +461,39 @@ def set_font_name fnt, src_name, c_family, e_family, version
 
 end
 
+def add_base_table fnt, spmode		
+	scripts = {'DFLT': 'ideo', 'hani': 'ideo', 'kana': 'ideo', 'latn': 'romn', 'cyrl': 'romn', 'grek': 'romn'}
+	fnt['BASE'] = {'horizontal' => {}, 'vertical' => {}}
+	scripts.each { |sc, tag|
+		fnt['BASE']['horizontal'][sc] = {
+			'defaultBaseline' => tag,
+			'baselines' => {
+				'icfb' => -64,
+				'icft' => 840,
+				'ideo' => -124,
+				'idtp' => 900,
+				'romn' => 0
+			}
+		}
+		fnt['BASE']['vertical'][sc] = {
+			'defaultBaseline' => tag,
+			'baselines' => {
+				'icfb' => 60,
+				'icft' => 1004 + (spmode != 'none' ? 512 : 0),
+				'ideo' => 0,
+				'idtp' => 1024 + (spmode != 'none' ? 512 : 0),
+				'romn' => 120
+			}
+		}
+	}
+end
+
 def make_font src_font, c_family, e_family, version, use_src_bpmf=false, spmode = nil
 	read_zhuyin_data
 
 	data = File.read($bpmfsrc)
 	fnt = JSON.parse(data)
+	add_base_table(fnt, spmode)
 
 	$order_sym = []
 	$order_zy = []
@@ -492,20 +522,29 @@ def make_font src_font, c_family, e_family, version, use_src_bpmf=false, spmode 
 
 	fnt['glyph_order'] = ['.notdef'] + $order_sym.sort + $order_zy + $order_han.sort
 
-	f = File.open('tmp/output.js', 'w:utf-8')
+	json_file = "tmp/#{$psname}.json"
+	f = File.open(json_file, 'w:utf-8')
 	f.puts JSON.pretty_generate(fnt)
 	f.close
 
-	puts "Build TrueType font... (pre)"
-	system("#{$otfccbuild} tmp/output.js -o tmp/otfbuild.ttf")
+	json_zip_file = "source/#{$psname}.json.zip"
+	ttf_file = "outputs/#{$psname}.ttf"
 
-	puts "Fix Cmap..."
-	system("#{$ttx} -t cmap -o tmp/otfbuild_cmap.ttx tmp/otfbuild.ttf")
-	system("#{$ttx} -m tmp/otfbuild.ttf -o outputs/#{$psname}.ttf tmp/otfbuild_cmap.ttx")
+	puts "Build TrueType font... (pre)"
+	system("#{$otfccbuild} #{json_file} -o #{ttf_file}")
+
+	puts "Save JSON zip as Google Fonts source code..."
+	File.delete(json_zip_file) if File.exist?(json_zip_file)		# 7-Zip：先刪除舊檔，避免殘留/重複
+	system(%Q{"#{$zip}" a -tzip "#{File.basename(json_zip_file)}" "#{File.basename(json_file)}"}, chdir: "tmp")		# 在 tmp 目錄下執行，讓 zip 內只包含檔名（等效 zip -j）
+	File.rename("tmp/#{File.basename(json_zip_file)}", json_zip_file)	# 移回 source 目錄（因為我們在 tmp 裡產生 zip）
+
+	# puts "Fix Cmap..."
+	# system("#{$ttx} -t cmap -o tmp/otfbuild_cmap.ttx tmp/otfbuild.ttf")
+	# system("#{$ttx} -m tmp/otfbuild.ttf -o outputs/#{$psname}.ttf tmp/otfbuild_cmap.ttx")
 end
 
-ver = '1.501'
-make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
+ver = '1.600'
+# make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
 # make_font('SourceHanSansTW-Bold.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
 # make_font('SourceHanSansTW-ExtraLight.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
 # make_font('SourceHanSansTW-Heavy.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
@@ -559,5 +598,5 @@ make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, tr
 # make_font('Iansui-Regular.ttf', 'ㄅ注音芫荽', 'Bpmf Iansui', ver, true)
 # make_font('Huninn-Regular.ttf', 'ㄅ注音粉圓', 'Bpmf Huninn', ver, true)
 
-# make_font('GenYoMinTW-R.ttf', 'ㄅ字嗨注音而已', 'Bpmf Zihi Only', ver, false, 'none')
-# make_font('GenYoMinTW-R.ttf', 'ㄅ字嗨注音加框', 'Bpmf Zihi Box', ver, false, 'box')
+make_font('GenWanMin2TW-R.ttf', 'ㄅ字嗨注音而已', 'Bpmf Zihi Only', ver, false, 'none')
+make_font('GenWanMin2TW-R.ttf', 'ㄅ字嗨注音加框', 'Bpmf Zihi Box', ver, false, 'box')
