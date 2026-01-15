@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch: 
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -13,27 +17,22 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    # 1. Install System Tools (7zip)
+    # 1. Install System Tools
     - name: Install System Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y p7zip-full build-essential
 
-    # 2. Build and Install OTFCC (Font Tools)
-    # The ruby script relies on otfccdump and otfccbuild
+    # 2. Build and Install OTFCC
     - name: Build and Install otfcc
       run: |
         git clone https://github.com/caryll/otfcc.git
         cd otfcc
-        # Use premake to generate makefiles, then build
         ./dep/bin-linux/premake5 gmake
         cd build/gmake
         make config=release_x64
-        # Move binaries to a path in system $PATH
         sudo cp ../../bin/release-x64/otfccdump /usr/local/bin/
         sudo cp ../../bin/release-x64/otfccbuild /usr/local/bin/
-        # Verify installation
-        otfccdump --version
 
     # 3. Setup Ruby
     - name: Set up Ruby
@@ -41,18 +40,36 @@ jobs:
       with:
         ruby-version: '3.2'
 
-    # 4. Run the build script
-    - name: Run Font Build Script
-      run: ruby make_font.rb
+    # 4. Check & Update Sources (Generic)
+    - name: Update Upstream Fonts
+      run: ruby update_sources.rb
 
-    # 5. Save the Output (TTF) as an Artifact
+    # 5. Commit and Push (Only if git detects changes)
+    - name: Commit and Push Changes
+      run: |
+        # Check if there are any changes to tracked files
+        if [[ -n $(git status --porcelain) ]]; then
+          echo "Changes detected. Committing..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add srcfonts/*.ttf
+          git commit -m "Auto-update source fonts from upstream [skip ci]"
+          git push
+        else
+          echo "No changes detected."
+        fi
+
+    # 6. Run the build script
+    - name: Run Font Build Script
+      run: ruby build_font.rb
+
+    # 7. Upload Artifacts
     - name: Upload TTF Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: Generated Fonts
         path: outputs/*.ttf
 
-    # 6. Save the Source (ZIP) as an Artifact
     - name: Upload Source Zip
       uses: actions/upload-artifact@v4
       with:

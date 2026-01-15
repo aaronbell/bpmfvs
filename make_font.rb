@@ -186,9 +186,9 @@ def shift contours, off, xy = 'y'
     contours
 end
 
-def gen_rotate_glyph sg, input
-    # Flatten the glyph (resolve composites) so we have actual shapes to rotate
-    flat_contours = get_flattened_contours(sg, input)
+def gen_rotate_glyph sg, input, reverse_map
+    # Flatten the glyph using the reverse map to find components
+    flat_contours = get_flattened_contours(sg, input, reverse_map)
     
     h = sg['advanceWidth']
     paths = []
@@ -196,9 +196,6 @@ def gen_rotate_glyph sg, input
     flat_contours.each { |sp|
         path = []
         sp.each { |sn|
-            # Rotate 90 degrees clockwise
-            # New X = Old Y + 124 (vertical shift)
-            # New Y = Height - Old X
             path << {'x' => sn['y'] + 124, 'y' => h-sn['x'], 'on' => sn['on']}
         }
         paths << path
@@ -213,26 +210,29 @@ def gen_rotate_glyph sg, input
 end
 
 # Helper to flatten composites into simple contours for rotation
-def get_flattened_contours(g, input_json)
+def get_flattened_contours(g, input_json, reverse_map)
     contours = []
     
     # 1. Get raw contours if they exist
     if g['contours']
-        # Deep copy to prevent modifying the original
         contours += Marshal.load(Marshal.dump(g['contours']))
     end
     
     # 2. Get contours from references (recursive)
     if g['references']
         g['references'].each do |ref|
-            ref_g_name = ref['glyph']
-            ref_g = input_json['glyf'][ref_g_name]
+            target_name = ref['glyph']
             
-            # Skip if broken reference
+            # KEY FIX: Look up the Source Name using the Target Name
+            src_name = reverse_map[target_name]
+            
+            # Fallback: Check specific source name, or try target name directly if no map exists
+            ref_g = input_json['glyf'][src_name] || input_json['glyf'][target_name]
+            
             next unless ref_g
             
-            # Recurse
-            ref_contours = get_flattened_contours(ref_g, input_json)
+            # Recurse with the same map
+            ref_contours = get_flattened_contours(ref_g, input_json, reverse_map)
             
             # Apply offsets
             dx = ref['x'] || 0
@@ -426,15 +426,17 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
             $order_sym << gn
             
             # Generate vertical variant for ALL glyphs (including composites)
-            # We now pass 'input' so the function can resolve references
-            gv = gen_rotate_glyph(g, input)
+            # Create a reverse map (Target Name -> Source Name) so we can find component data
+            reverse_map = $imported_src_map.invert
             
-            # Only generate if it looks like a proportional Latin glyph (width < 1000)
-            # and actually resulted in contours
+            gv = gen_rotate_glyph(g, input, reverse_map)
+            
+            # Only generate if it looks like a proportional Latin glyph and resulted in contours
             if g['advanceWidth'] < 1000 && !gv['contours'].empty?
                 gvn = gn+'.vrt2'
                 fnt['glyf'][gvn] = gv
                 $vrt2s[gn] = gvn
+            end
             end
         end
 
