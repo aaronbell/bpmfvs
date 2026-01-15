@@ -43,7 +43,7 @@ jobs:
 
     # 4. Run the build script
     - name: Run Font Build Script
-      run: ruby build_font.rb
+      run: ruby make_font.rb
 
     # 5. Save the Output (TTF) as an Artifact
     - name: Upload TTF Artifacts
