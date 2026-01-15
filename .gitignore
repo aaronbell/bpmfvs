@@ -1,10 +1,5 @@
 old/
 encoding/
-srcfonts/Gen*.ttf
-srcfonts/Source*.ttf
-srcfonts/jf*.ttf
-srcfonts/Hu*.ttf
-srcfonts/iansui*.ttf
 stdkai/
 releases/
 Bpmf[hH]*
