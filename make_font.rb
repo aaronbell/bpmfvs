@@ -81,19 +81,19 @@ def create_bpmf_glypfs(fnt, use_src_bpmf, spmode = nil)
         zy = zy.gsub(/[ˊˇˋ˙]/, '')
         len = zy.length
         len.times { |i|
-            refs << {"glyph":"zy" + $bpmfname[zy[i]],"x": (spmode != 'none' ? -512 : -668),"y":$pos[len][i] + (py[-1] == '5' ? -60 : 0)}
+            refs << { 'glyph' => "zy" + $bpmfname[zy[i]], 'x' => (spmode != 'none' ? -512 : -668), 'y' => $pos[len][i] + (py[-1] == '5' ? -60 : 0)}
         }
-        refs << {"glyph":"tone" + py[-1], "x":(spmode != 'none' ? -212 : -368),"y":$pos[len][-2]+(py[-1]=='2' ? 280 : 200) } if py[-1] =~ /[234]/
-        refs << {"glyph":"tone5", "x":(spmode != 'none' ? -512 : -668),"y":$pos[len][-1]} if py[-1] == '5'
+        refs << { 'glyph' => "tone" + py[-1], 'x' => (spmode != 'none' ? -212 : -368), 'y' => $pos[len][-2]+(py[-1]=='2' ? 280 : 200) } if py[-1] =~ /[234]/
+        refs << { 'glyph' => "tone5", 'x' => (spmode != 'none' ? -512 : -668), 'y' => $pos[len][-1]} if py[-1] == '5'
         
         gn = 'z_' + py
-        fnt['glyf'][gn] = {'advanceWidth': 0, 'advanceHeight': 1024, 'verticalOrigin': 900, 'references': refs }
+        fnt['glyf'][gn] = { 'advanceWidth' => 0, 'advanceHeight' => 1024, 'verticalOrigin' => 900, 'references' => refs }
         $order_zy << gn
         fnt['cmap'][zyPua] = gn
         zyPua += 1
 
         gvn = 'z_' + py + '.vert'
-        fnt['glyf'][gvn] = {'advanceWidth': $adw, 'advanceHeight': 1, 'verticalOrigin': -124, 'references': [{"glyph": gn, "x": $adw, "y": 0}] }
+        fnt['glyf'][gvn] = { 'advanceWidth' => $adw, 'advanceHeight' => 1, 'verticalOrigin' => -124, 'references' => [{ 'glyph' => gn, 'x' => $adw, 'y' => 0 }] }
         zyv << gvn
         $verts[gn] = gvn
     }
@@ -115,12 +115,12 @@ def create_zhuyin_glyphs fnt
             next if i >= 6
             hangn = 'uni'+uniHex+'.ss00'
             gly = {
-                'advanceWidth': $adw, 
-                'advanceHeight': 1024, 
-                'verticalOrigin': fnt['glyf'][hangn]['verticalOrigin'],
-                'references': [
-                    {"glyph": "z_" + $z[zy], "x": $adw, "y": 0},
-                    {"glyph": hangn, "x":0, "y": 0}
+                'advanceWidth' => $adw, 
+                'advanceHeight' => 1024, 
+                'verticalOrigin' => fnt['glyf'][hangn]['verticalOrigin'],
+                'references' => [
+                    { 'glyph' => "z_" + $z[zy], 'x' => $adw, 'y' => 0 },
+                    { 'glyph' => hangn, 'x' => 0, 'y' => 0 }
                 ]}
             
             gn = 'uni'+uniHex
@@ -437,7 +437,6 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
                 fnt['glyf'][gvn] = gv
                 $vrt2s[gn] = gvn
             end
-            end
         end
 
         next unless $ccfg[uniHex] =~ /,vert,/
@@ -580,37 +579,37 @@ def set_font_name fnt, src_name, c_family, e_family, version
     
     fnt['head']['fontRevision'] = version.to_f
     fnt['name'] = [
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID':  1, 'nameString': c_family + ' ' + weight },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID':  2, 'nameString': weight },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID':  4, 'nameString': c_family + ' ' + weight },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID': 16, 'nameString': c_family },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID': 17, 'nameString': weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  1, 'nameString' => c_family + ' ' + weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  2, 'nameString' => weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  4, 'nameString' => c_family + ' ' + weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' => 16, 'nameString' => c_family },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' => 17, 'nameString' => weight },
 
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  1, 'nameString': e_family + ' ' + weight },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  2, 'nameString': weight },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  3, 'nameString': identifier },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  4, 'nameString': e_family + ' ' + weight },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  5, 'nameString': 'Version ' + version },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  6, 'nameString': $psname },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID':  8, 'nameString': $font_vendor },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID': 11, 'nameString': $font_url },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID': 16, 'nameString': e_family },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID': 17, 'nameString': weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  1, 'nameString' => e_family + ' ' + weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  2, 'nameString' => weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  3, 'nameString' => identifier },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  4, 'nameString' => e_family + ' ' + weight },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  5, 'nameString' => 'Version ' + version },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  6, 'nameString' => $psname },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  8, 'nameString' => $font_vendor },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 11, 'nameString' => $font_url },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 16, 'nameString' => e_family },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 17, 'nameString' => weight },
 
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  1, 'nameString': e_family + ' ' + weight },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  2, 'nameString': weight },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  3, 'nameString': identifier },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  4, 'nameString': e_family + ' ' + weight },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  5, 'nameString': 'Version ' + version },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  6, 'nameString': $psname },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID':  8, 'nameString': $font_vendor },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID': 11, 'nameString': $font_url },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID': 16, 'nameString': e_family },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID': 17, 'nameString': weight }
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  1, 'nameString' => e_family + ' ' + weight },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  2, 'nameString' => weight },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  3, 'nameString' => identifier },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  4, 'nameString' => e_family + ' ' + weight },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  5, 'nameString' => 'Version ' + version },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  6, 'nameString' => $psname },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  8, 'nameString' => $font_vendor },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' => 11, 'nameString' => $font_url },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' => 16, 'nameString' => e_family },
+        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' => 17, 'nameString' => weight }
     ]
 
-    fnt['name'] << { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID': 13, 'nameString': license } if license && license != ''
-    fnt['name'] << { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID': 14, 'nameString': license_url } if license_url && license_url != ''
+    fnt['name'] << { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 13, 'nameString' => license } if license && license != ''
+    fnt['name'] << { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 14, 'nameString' => license_url } if license_url && license_url != ''
 
 end
 
