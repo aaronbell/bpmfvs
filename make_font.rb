@@ -315,12 +315,14 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
             fnt['glyf'][gn] = g
             fnt['cmap'][uniDec] = gn
             $order_sym << gn
-        elsif !g['references']
+        else 
+            # Capture everything else (including composites like uni01D9)
             gn = 'uni' + uniHex
             fnt['glyf'][gn] = g
             fnt['cmap'][uniDec] = gn
             $order_sym << gn
             
+            # Attempt to generate vertical rotation (might be empty for composites, which is fine)
             gv = gen_rotate_glyph(g)
             if g['advanceWidth'] < 1000
                 gvn = gn+'.vrt2'
