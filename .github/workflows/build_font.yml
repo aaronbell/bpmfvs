@@ -33,6 +33,10 @@ jobs:
         make config=release_x64
         sudo cp ../../bin/release-x64/otfccdump /usr/local/bin/
         sudo cp ../../bin/release-x64/otfccbuild /usr/local/bin/
+        
+        # Cleanup: Remove the build folder so it doesn't clutter git status
+        cd ../../..
+        rm -rf otfcc
 
     # 3. Setup Ruby
     - name: Set up Ruby
@@ -44,19 +48,23 @@ jobs:
     - name: Update Upstream Fonts
       run: ruby update_sources.rb
 
-    # 5. Commit and Push (Only if git detects changes)
+    # 5. Commit and Push (Only if the font file actually changed)
     - name: Commit and Push Changes
       run: |
-        # Check if there are any changes to tracked files
-        if [[ -n $(git status --porcelain) ]]; then
-          echo "Changes detected. Committing..."
+        # FIX: Check ONLY the srcfonts directory for changes. 
+        # This ignores the 'otfcc' folder or any other build noise.
+        if [[ -n $(git status --porcelain srcfonts/) ]]; then
+          echo "Font update detected. Committing..."
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage and commit
           git add srcfonts/*.ttf
           git commit -m "Auto-update source fonts from upstream [skip ci]"
           git push
         else
-          echo "No changes detected."
+          echo "No font changes detected. Skipping commit."
         fi
 
     # 6. Run the build script
