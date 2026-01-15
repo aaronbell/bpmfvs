@@ -186,18 +186,23 @@ def shift contours, off, xy = 'y'
     contours
 end
 
-def gen_rotate_glyph sg
+def gen_rotate_glyph sg, input
+    # Flatten the glyph (resolve composites) so we have actual shapes to rotate
+    flat_contours = get_flattened_contours(sg, input)
+    
     h = sg['advanceWidth']
     paths = []
-    if sg.has_key?('contours')
-        sg['contours'].each { |sp|
-            path = []
-            sp.each { |sn|
-                path << {'x' => sn['y'] + 124, 'y' => h-sn['x'], 'on' => sn['on']}
-            }
-            paths << path
+    
+    flat_contours.each { |sp|
+        path = []
+        sp.each { |sn|
+            # Rotate 90 degrees clockwise
+            # New X = Old Y + 124 (vertical shift)
+            # New Y = Height - Old X
+            path << {'x' => sn['y'] + 124, 'y' => h-sn['x'], 'on' => sn['on']}
         }
-    end
+        paths << path
+    }
 
     return {
         'advanceWidth' => $adw,
@@ -205,6 +210,47 @@ def gen_rotate_glyph sg
         'verticalOrigin' => h,
         'contours' => paths
     }
+end
+
+# Helper to flatten composites into simple contours for rotation
+def get_flattened_contours(g, input_json)
+    contours = []
+    
+    # 1. Get raw contours if they exist
+    if g['contours']
+        # Deep copy to prevent modifying the original
+        contours += Marshal.load(Marshal.dump(g['contours']))
+    end
+    
+    # 2. Get contours from references (recursive)
+    if g['references']
+        g['references'].each do |ref|
+            ref_g_name = ref['glyph']
+            ref_g = input_json['glyf'][ref_g_name]
+            
+            # Skip if broken reference
+            next unless ref_g
+            
+            # Recurse
+            ref_contours = get_flattened_contours(ref_g, input_json)
+            
+            # Apply offsets
+            dx = ref['x'] || 0
+            dy = ref['y'] || 0
+            
+            if dx != 0 || dy != 0
+                ref_contours.each do |contour|
+                    contour.each do |point|
+                        point['x'] += dx
+                        point['y'] += dy
+                    end
+                end
+            end
+            contours += ref_contours
+        end
+    end
+    
+    return contours
 end
 
 def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, spmode
@@ -379,14 +425,16 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
             fnt['cmap'][uniDec] = gn
             $order_sym << gn
             
-            # Generate vertical variant if simple glyph
-            if !g['references']
-                gv = gen_rotate_glyph(g)
-                if g['advanceWidth'] < 1000
-                    gvn = gn+'.vrt2'
-                    fnt['glyf'][gvn] = gv
-                    $vrt2s[gn] = gvn
-                end
+            # Generate vertical variant for ALL glyphs (including composites)
+            # We now pass 'input' so the function can resolve references
+            gv = gen_rotate_glyph(g, input)
+            
+            # Only generate if it looks like a proportional Latin glyph (width < 1000)
+            # and actually resulted in contours
+            if g['advanceWidth'] < 1000 && !gv['contours'].empty?
+                gvn = gn+'.vrt2'
+                fnt['glyf'][gvn] = gv
+                $vrt2s[gn] = gvn
             end
         end
 
