@@ -209,7 +209,6 @@ end
 
 def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, spmode
     puts "Now dump font to JSON..."
-    # Ensure source file exists
     unless File.exist?("srcfonts/#{font_file}")
         puts "Error: srcfonts/#{font_file} not found."
         exit 1
@@ -217,15 +216,11 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
 
     system("#{$otfccdump} --pretty \"srcfonts/#{font_file}\" -o tmp/src_font.js")
 
+    # 1. Prepare Target List
     $clist = {}
     $ccfg = {}
     (0x20..0x7e).each { |i| $clist[sprintf('%04x', i).upcase] = false}
     
-    unless File.exist?('allchars.txt')
-        puts "Error: allchars.txt not found."
-        exit 1
-    end
-
     f = File.open('allchars.txt', 'r:utf-8')
     f.each { |s|
         s.chomp!
@@ -241,14 +236,60 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
     f.close
 
     puts "Now read glyphs from font..."
-    
-    unless File.exist?('tmp/src_font.js')
-        puts "Error: tmp/src_font.js was not generated. Check if otfccdump is working."
-        exit 1
-    end
-
     data = File.read('tmp/src_font.js')
     input = JSON.parse(data)
+    
+    # 2. Setup Helper Maps
+    # Reverse CMap: helps us find the Unicode for a raw glyph name (e.g. "gravecomb" -> "768")
+    src_rev_cmap = {}
+    input['cmap'].each { |u, g| src_rev_cmap[g] = u }
+    
+    # Imported Map: Keeps track of "Source Name" -> "Target Name" to resolve references
+    $imported_src_map = {}
+
+    # 3. Define Recursive Component Resolver
+    # This lambda copies a component, renames it correctly, and ensures it exists in the output
+    resolve_component = lambda do |comp_name|
+        # If we already imported this component, return its new name
+        return $imported_src_map[comp_name] if $imported_src_map.has_key?(comp_name)
+
+        # Determine target name (Try to match Unicode, otherwise keep original)
+        u_dec = src_rev_cmap[comp_name]
+        if u_dec
+            target_name = 'uni' + u_dec.to_i.to_s(16).upcase.rjust(4, '0')
+        else
+            target_name = comp_name
+        end
+
+        # Register mapping immediately to prevent infinite loops
+        $imported_src_map[comp_name] = target_name
+
+        # Copy the glyph data
+        if input['glyf'].has_key?(comp_name)
+            comp_g = input['glyf'][comp_name].dup
+            
+            # Recursively fix references inside this component
+            if comp_g['references']
+                comp_g['references'].each do |ref|
+                    ref['glyph'] = resolve_component.call(ref['glyph'])
+                end
+            end
+
+            # Apply standard shifts (same as main logic)
+            comp_g['contours'] = shift(comp_g['contours'], offy) if offy != 0 && comp_g.has_key?('contours')
+
+            # Add to output font
+            fnt['glyf'][target_name] = comp_g
+            # Optional: Add to CMap if it has a unicode (ensures components like space/grave are valid chars)
+            fnt['cmap'][u_dec] = target_name if u_dec
+        else
+            puts "Warning: Referenced component #{comp_name} missing in source."
+        end
+
+        return target_name
+    end
+
+    # 4. Standard Font Metadata Setup
     set_font_name fnt, input['name'], c_family, e_family, version
     fnt['OS_2']['panose'][2] = input['OS_2']['panose'][2]
     fnt['OS_2']['usWeightClass'] = input['OS_2']['usWeightClass']
@@ -257,11 +298,8 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
     if input['GSUB'] && input['GSUB']['lookups']
         input['GSUB']['lookups'].each { |lkn, lkup|
             next unless lkn =~ /_vert_/
-            
             lkup['subtables'].each { |lktb|
-                lktb.each { |n1, n2|
-                    src_verts[n1] = n2
-                }
+                lktb.each { |n1, n2| src_verts[n1] = n2 }
             }
         }
     end
@@ -270,11 +308,8 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
     if input['GSUB'] && input['GSUB']['lookups']
         input['GSUB']['lookups'].each { |lkn, lkup|
             next unless lkn =~ /_salt_/
-            
             lkup['subtables'].each { |lktb|
-                lktb.each { |n1, n2|
-                    src_salts[n1] = n2
-                }
+                lktb.each { |n1, n2| src_salts[n1] = n2 }
             }
         }
     end
@@ -284,7 +319,7 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
     fnt['glyf']['uniF000']['contours'] = shift(fnt['glyf']['uniF000']['contours'], -256, 'x') if spmode == 'none'
     fnt['glyf']['uniF000.vert']['contours'] = shift(fnt['glyf']['uniF000.vert']['contours'], -768, 'x') if spmode == 'none'
 
-
+    # 5. Main Glyph Loop
     $clist.keys.each { |uniHex|
         uniDec = uniHex.to_i(16).to_s
         next unless input['cmap'].has_key?(uniDec)
@@ -294,7 +329,8 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
         c = uniDec.to_i.chr(Encoding::UTF_8)
         fgn = input['cmap'][uniDec]
         fgn = src_salts[fgn] if src_salts.has_key?(fgn)
-        g = input['glyf'][fgn]
+        
+        g = input['glyf'][fgn].dup # Dup is important to avoid modifying original input if referenced later
         g['contours'] = shift(g['contours'], offy) if offy != 0 && g.has_key?('contours')
 
         if $zhuyin.has_key?(c)
@@ -307,27 +343,50 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
             $order_han << gn
             fnt['cmap_uvs'][uniDec + ' ' + ($ivs).to_s] = gn
             $sslist[0]['uni' + uniHex] = gn
+            
+            # Map this for consistency (though zhuyin logic handles references manually)
+            $imported_src_map[fgn] = gn 
+
         elsif g['advanceWidth'] == 1024 || g['advanceWidth'] == 1000
             gn = 'uni' + uniHex
             g['advanceWidth'] = $adw
             g['advanceHeight'] = 1024
             g['contours'] = align_pos(g['contours'], $1) if $ccfg[uniHex] =~ /,([LRTB]),/ && $adw > 1024
+            
+            # Resolve References (in case fullwidth symbols use components)
+            if g['references']
+                g['references'].each { |ref| ref['glyph'] = resolve_component.call(ref['glyph']) }
+            end
+
             fnt['glyf'][gn] = g
             fnt['cmap'][uniDec] = gn
             $order_sym << gn
+            $imported_src_map[fgn] = gn
+
         else 
-            # Capture everything else (including composites like uni01D9)
+            # Standard Glyph (Latin, etc)
             gn = 'uni' + uniHex
+            
+            # 1. Register Name FIRST
+            $imported_src_map[fgn] = gn
+            
+            # 2. Recursively Resolve References
+            if g['references']
+                g['references'].each { |ref| ref['glyph'] = resolve_component.call(ref['glyph']) }
+            end
+
             fnt['glyf'][gn] = g
             fnt['cmap'][uniDec] = gn
             $order_sym << gn
             
-            # Attempt to generate vertical rotation (might be empty for composites, which is fine)
-            gv = gen_rotate_glyph(g)
-            if g['advanceWidth'] < 1000
-                gvn = gn+'.vrt2'
-                fnt['glyf'][gvn] = gv
-                $vrt2s[gn] = gvn
+            # Generate vertical variant if simple glyph
+            if !g['references']
+                gv = gen_rotate_glyph(g)
+                if g['advanceWidth'] < 1000
+                    gvn = gn+'.vrt2'
+                    fnt['glyf'][gvn] = gv
+                    $vrt2s[gn] = gvn
+                end
             end
         end
 
@@ -335,8 +394,14 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
         next unless src_verts.has_key?(fgn)
         
         fvgn = src_verts[fgn]
-        gv = input['glyf'][fvgn]
+        gv = input['glyf'][fvgn].dup
         gv['contours'] = shift(gv['contours'], offy) if offy != 0 && gv.has_key?('contours')
+        
+        # Resolve references in vertical alternates too
+        if gv['references']
+             gv['references'].each { |ref| ref['glyph'] = resolve_component.call(ref['glyph']) }
+        end
+
         gvn = 'uni' + uniHex + '.vert'
         gv['advanceWidth'] = $adw
         gv['advanceHeight'] = 1024
@@ -347,6 +412,7 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
 
     return unless use_src_bpmf
 
+    # BPMF Logic
     [(0x3105..0x3129).to_a, 0x02CA, 0x02C7, 0x02CB, 0x02D9].flatten.each { |uni|
         uniHex = sprintf('%04x', uni).upcase
         uniDec = uni.to_s
@@ -354,21 +420,34 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
         $clist[uniHex] = true
         c = uniDec.to_i.chr(Encoding::UTF_8)
         fgn = input['cmap'][uniDec]
-        g = input['glyf'][fgn]
+        g = input['glyf'][fgn].dup
         g['contours'] = shift(g['contours'], offy) if offy != 0 && g.has_key?('contours')
 
         gn = 'uni' + uniHex
         g['advanceWidth'] = $adw
         g['advanceHeight'] = 1024
+        
+        # Resolve References
+        if g['references']
+            g['references'].each { |ref| ref['glyph'] = resolve_component.call(ref['glyph']) }
+        end
+
         fnt['glyf'][gn] = g
         fnt['cmap'][uniDec] = gn
         $order_sym << gn
+        $imported_src_map[fgn] = gn
 
         next unless src_verts.has_key?(fgn)
         
         fvgn = src_verts[fgn]
-        gv = input['glyf'][fvgn]
+        gv = input['glyf'][fvgn].dup
         gv['contours'] = shift(gv['contours'], offy) if offy != 0 && gv.has_key?('contours')
+        
+        # Resolve References
+        if gv['references']
+            gv['references'].each { |ref| ref['glyph'] = resolve_component.call(ref['glyph']) }
+        end
+
         gvn = 'uni' + uniHex + '.vert'
         gv['advanceWidth'] = $adw
         gv['advanceHeight'] = 1024
