@@ -71,7 +71,30 @@ jobs:
     - name: Run Font Build Script
       run: ruby make_font.rb
 
-    # 7. Upload Artifacts
+    # 7. Commit Generated Fonts to Repository
+    - name: Commit Generated Fonts
+      run: |
+        # Ensure the target directory exists
+        mkdir -p fonts
+        
+        # Copy the built fonts from outputs/ to fonts/
+        cp outputs/*.ttf fonts/
+        
+        # Check if the fonts folder has changed
+        if [[ -n $(git status --porcelain fonts/) ]]; then
+          echo "Generated fonts have changed. Committing..."
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add fonts/*.ttf
+          git commit -m "Update generated fonts [skip ci]"
+          git push
+        else
+          echo "No changes in generated fonts."
+        fi
+
+    # 8. Upload Artifacts
     - name: Upload TTF Artifacts
       uses: actions/upload-artifact@v4
       with:
