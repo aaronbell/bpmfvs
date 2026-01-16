@@ -611,7 +611,7 @@ def set_font_name fnt, src_name, c_family, e_family, version
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  5, 'nameString' => 'Version ' + version },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  6, 'nameString' => $psname },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  8, 'nameString' => $font_vendor },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  8, 'nameString' => $font_designer },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  9, 'nameString' => $font_designer },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 11, 'nameString' => $font_url },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 16, 'nameString' => e_family },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 17, 'nameString' => weight }
