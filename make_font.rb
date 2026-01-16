@@ -254,6 +254,49 @@ def get_flattened_contours(g, input_json, reverse_map)
     return contours
 end
 
+# Recursive helper to fully decompose a glyph into contours
+# Works purely on the Source JSON data
+def decompose_source_glyph(g_data, input_json)
+    contours = []
+    
+    # 1. Keep existing contours (if mixed mode)
+    if g_data['contours']
+        contours += Marshal.load(Marshal.dump(g_data['contours']))
+    end
+
+    # 2. Recursively flatten references
+    if g_data['references']
+        g_data['references'].each do |ref|
+            src_name = ref['glyph']
+            ref_g = input_json['glyf'][src_name]
+            
+            if ref_g
+                # Recurse: Get contours from the referenced glyph
+                ref_contours = decompose_source_glyph(ref_g, input_json)
+                
+                # Apply offsets (Simple x/y shift)
+                # Note: If your font uses scaling/matrix transforms (a,b,c,d), 
+                # you would need matrix math here. Assuming simple shift for now:
+                dx = ref['x'] || 0
+                dy = ref['y'] || 0
+                
+                if dx != 0 || dy != 0
+                    ref_contours.each do |contour|
+                        contour.each do |point|
+                            point['x'] += dx
+                            point['y'] += dy
+                        end
+                    end
+                end
+                
+                contours += ref_contours
+            end
+        end
+    end
+    
+    return contours
+end
+
 def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, spmode
     puts "Now dump font to JSON..."
     unless File.exist?("srcfonts/#{font_file}")
@@ -378,6 +421,22 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
         fgn = src_salts[fgn] if src_salts.has_key?(fgn)
         
         g = input['glyf'][fgn].dup # Dup is important to avoid modifying original input if referenced later
+
+        # Adding in a flattening step here to prevent nested composites
+        if g['references']
+            # Check if any referenced glyph is ITSELF a composite
+            has_nesting = g['references'].any? do |ref|
+                ref_src = input['glyf'][ref['glyph']]
+                ref_src && ref_src['references'] # If the child has references, we have nesting
+            end
+
+            if has_nesting
+                # Detected nesting! Flatten this glyph to contours.
+                g['contours'] = decompose_source_glyph(g, input)
+                g.delete('references') # Remove components entirely
+            end
+        end
+
         g['contours'] = shift(g['contours'], offy) if offy != 0 && g.has_key?('contours')
 
         if $zhuyin.has_key?(c)
