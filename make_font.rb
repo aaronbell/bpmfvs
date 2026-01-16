@@ -425,7 +425,7 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
 
         $clist[uniHex] = true
         
-        char_utf8 = uniDec.to_i.chr(Encoding::UTF_8)
+        c = uniDec.to_i.chr(Encoding::UTF_8)
         fgn = input['cmap'][uniDec]
         fgn = src_salts[fgn] if src_salts.has_key?(fgn)
         
