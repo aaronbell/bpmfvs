@@ -14079,4 +14079,4 @@ FF5A		# A343 ｚ
 01DB		# Ǜ
 00FC		# ü
 00DC		# Ü
-00A0        # space
+00A0		# space
