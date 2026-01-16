@@ -15,6 +15,7 @@ $zip = '7z'
 
 $bpmfsrc = 'f_bpmfgen.json'
 $font_vendor = 'But Ko'
+$font_designer = 'But Ko'
 $font_url = 'https://github.com/ButTaiwan/bpmfvs'
 
 # Ensure directories exist
@@ -610,6 +611,7 @@ def set_font_name fnt, src_name, c_family, e_family, version
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  5, 'nameString' => 'Version ' + version },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  6, 'nameString' => $psname },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  8, 'nameString' => $font_vendor },
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  8, 'nameString' => $font_designer },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 11, 'nameString' => $font_url },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 16, 'nameString' => e_family },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 17, 'nameString' => weight }
@@ -637,7 +639,7 @@ def add_base_table fnt, spmode
             'defaultBaseline' => tag,
             'baselines' => {
                 'icfb' => 60,
-                'icft' => 1004 + (spmode != 'none' ? 512 : 0),
+                'icft' => 964 + (spmode != 'none' ? 512 : 0),
                 'ideo' => 0,
                 'idtp' => 1024 + (spmode != 'none' ? 512 : 0),
                 'romn' => 120
