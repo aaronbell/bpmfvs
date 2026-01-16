@@ -568,6 +568,7 @@ end
 
 def set_font_name fnt, src_name, c_family, e_family, version
     $nmap = Hash.new { nil }
+    # Only map platform 3 names (Windows)
     src_name.each { |ne| $nmap[ne['nameID']] = ne['nameString'] if ne['platformID'] == 3 }
 
     weight = $nmap[17] || $nmap[2] || 'Regular'
@@ -576,16 +577,33 @@ def set_font_name fnt, src_name, c_family, e_family, version
     $psname = e_family.gsub(/\s/, '') + '-' + weight
     
     identifier = (version+';'+$psname).gsub(/\s/, '')
-    
+
+    # --- LOGIC UPDATE: Handle NameID 1 (Family Name) ---
+    # If weight is "Regular" or "Bold", NameID 1 should just be the Family Name.
+    # Otherwise, it is "Family Weight" (for styling groups).
+    if ['Regular', 'Bold'].include?(weight)
+        c_family_nameid1 = c_family
+        e_family_nameid1 = e_family
+    else
+        c_family_nameid1 = c_family + ' ' + weight
+        e_family_nameid1 = e_family + ' ' + weight
+    end
+
     fnt['head']['fontRevision'] = version.to_f
+    
+    # Completely rebuild the name table (overriding old entries)
+    # Note: We are strictly adding Platform ID 3 (Windows). 
+    # Platform ID 1 entries are intentionally omitted.
     fnt['name'] = [
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  1, 'nameString' => c_family + ' ' + weight },
+        # --- Chinese (Traditional) - Language ID 1028 ---
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  1, 'nameString' => c_family_nameid1 },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  2, 'nameString' => weight },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' =>  4, 'nameString' => c_family + ' ' + weight },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' => 16, 'nameString' => c_family },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1028, 'nameID' => 17, 'nameString' => weight },
 
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  1, 'nameString' => e_family + ' ' + weight },
+        # --- English (US) - Language ID 1033 ---
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  1, 'nameString' => e_family_nameid1 },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  2, 'nameString' => weight },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  3, 'nameString' => identifier },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  4, 'nameString' => e_family + ' ' + weight },
@@ -594,23 +612,11 @@ def set_font_name fnt, src_name, c_family, e_family, version
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' =>  8, 'nameString' => $font_vendor },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 11, 'nameString' => $font_url },
         { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 16, 'nameString' => e_family },
-        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 17, 'nameString' => weight },
-
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  1, 'nameString' => e_family + ' ' + weight },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  2, 'nameString' => weight },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  3, 'nameString' => identifier },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  4, 'nameString' => e_family + ' ' + weight },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  5, 'nameString' => 'Version ' + version },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  6, 'nameString' => $psname },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' =>  8, 'nameString' => $font_vendor },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' => 11, 'nameString' => $font_url },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' => 16, 'nameString' => e_family },
-        { 'platformID' => 1, 'encodingID' => 0, 'languageID' => 0, 'nameID' => 17, 'nameString' => weight }
+        { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 17, 'nameString' => weight }
     ]
 
     fnt['name'] << { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 13, 'nameString' => license } if license && license != ''
     fnt['name'] << { 'platformID' => 3, 'encodingID' => 1, 'languageID' => 1033, 'nameID' => 14, 'nameString' => license_url } if license_url && license_url != ''
-
 end
 
 def add_base_table fnt, spmode      
@@ -699,8 +705,8 @@ def make_font src_font, c_family, e_family, version, use_src_bpmf=false, spmode 
 end
 
 ver = '1.600'
-make_font('Iansui-Regular.ttf', 'ㄅ字嗨注音而已', 'Bpmf Iansui', ver, true)
-make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
+make_font('Iansui-Regular.ttf', 'ㄅ字嗨注音而已', 'Iansui Bpmf', ver, true)
+make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Zihi Kai Std Bpmf', ver, true)
 
 
 # make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
