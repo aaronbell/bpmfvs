@@ -705,7 +705,7 @@ def make_font src_font, c_family, e_family, version, use_src_bpmf=false, spmode 
 end
 
 ver = '1.600'
-make_font('Iansui-Regular.ttf', 'ㄅ字嗨注音而已', 'Iansui Bpmf', ver, true)
+make_font('Iansui-Regular.ttf', '芫荽ㄅ字嗨注音而已', 'Iansui Bpmf', ver, true)
 make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Zihi Kai Std Bpmf', ver, true)
 
 
