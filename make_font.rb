@@ -255,11 +255,11 @@ def get_flattened_contours(g, input_json, reverse_map)
 end
 
 # Recursive helper to fully decompose a glyph into contours
-# Works purely on the Source JSON data
+# Handles x/y shifts AND affine transformations (a,b,c,d)
 def decompose_source_glyph(g_data, input_json)
     contours = []
     
-    # 1. Keep existing contours (if mixed mode)
+    # 1. Keep existing contours (if any)
     if g_data['contours']
         contours += Marshal.load(Marshal.dump(g_data['contours']))
     end
@@ -271,21 +271,30 @@ def decompose_source_glyph(g_data, input_json)
             ref_g = input_json['glyf'][src_name]
             
             if ref_g
-                # Recurse: Get contours from the referenced glyph
+                # Recurse: Get contours from the child glyph
                 ref_contours = decompose_source_glyph(ref_g, input_json)
                 
-                # Apply offsets (Simple x/y shift)
-                # Note: If your font uses scaling/matrix transforms (a,b,c,d), 
-                # you would need matrix math here. Assuming simple shift for now:
+                # Prepare transformation matrix
+                # Default identity matrix: x' = x + dx, y' = y + dy
                 dx = ref['x'] || 0
                 dy = ref['y'] || 0
+                a  = ref['a'] || 1.0
+                b  = ref['b'] || 0.0
+                c  = ref['c'] || 0.0
+                d  = ref['d'] || 1.0
                 
-                if dx != 0 || dy != 0
-                    ref_contours.each do |contour|
-                        contour.each do |point|
-                            point['x'] += dx
-                            point['y'] += dy
-                        end
+                # Apply transformation to every point in every contour
+                ref_contours.each do |contour|
+                    contour.each do |p|
+                        # Save original coords
+                        old_x = p['x']
+                        old_y = p['y']
+                        
+                        # Apply Affine Transform
+                        # x' = a*x + c*y + dx
+                        # y' = b*x + d*y + dy
+                        p['x'] = (a * old_x + c * old_y + dx).round
+                        p['y'] = (b * old_x + d * old_y + dy).round
                     end
                 end
                 
@@ -416,26 +425,31 @@ def read_font fnt, font_file, c_family, e_family, version, use_src_bpmf, offy, s
 
         $clist[uniHex] = true
         
-        c = uniDec.to_i.chr(Encoding::UTF_8)
+        char_utf8 = uniDec.to_i.chr(Encoding::UTF_8)
         fgn = input['cmap'][uniDec]
         fgn = src_salts[fgn] if src_salts.has_key?(fgn)
         
-        g = input['glyf'][fgn].dup # Dup is important to avoid modifying original input if referenced later
-
-        # Adding in a flattening step here to prevent nested composites
+        # Get the source glyph (Deep Copy to be safe)
+        g = Marshal.load(Marshal.dump(input['glyf'][fgn]))
+        
+        # --- LOGIC START: DETECT AND FIX NESTED COMPONENTS ---
         if g['references']
-            # Check if any referenced glyph is ITSELF a composite
+            # Check if any child glyph is ALSO a composite (nesting level > 1)
             has_nesting = g['references'].any? do |ref|
-                ref_src = input['glyf'][ref['glyph']]
-                ref_src && ref_src['references'] # If the child has references, we have nesting
+                child_name = ref['glyph']
+                child_g = input['glyf'][child_name]
+                # It is nested if the child exists AND has its own references
+                child_g && child_g['references'] && !child_g['references'].empty?
             end
 
             if has_nesting
-                # Detected nesting! Flatten this glyph to contours.
+                # puts "Flattening nested composite: #{fgn} (uni#{uniHex})"
+                # Flatten this glyph completely into contours
                 g['contours'] = decompose_source_glyph(g, input)
-                g.delete('references') # Remove components entirely
+                g.delete('references') # It is now a simple glyph
             end
         end
+        # --- LOGIC END ---------------------------------------
 
         g['contours'] = shift(g['contours'], offy) if offy != 0 && g.has_key?('contours')
 
