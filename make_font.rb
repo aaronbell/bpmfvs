@@ -694,11 +694,17 @@ def make_font src_font, c_family, e_family, version, use_src_bpmf=false, spmode 
     puts "Build TrueType font... (pre)"
     system("#{$otfccbuild} \"#{json_file}\" -o \"#{ttf_file}\"")
 
-    puts "Save JSON zip as Google Fonts source code..."
-    File.delete(json_zip_file) if File.exist?(json_zip_file) 
-    # Use generic '7z' or 'zip' command logic. Here using '7z' as standard for Linux CI
-    system(%Q{"#{$zip}" a -tzip "#{File.basename(json_zip_file)}" "#{File.basename(json_file)}"}, chdir: "tmp") 
-    File.rename("tmp/#{File.basename(json_zip_file)}", json_zip_file) 
+    # --- NEW: Post-processing to remove nested components ---
+    puts "Fixing nested components..."
+    system("python3 decompose.py \"#{ttf_file}\"")
+    # --------------------------------------------------------
+
+    # puts "Save JSON zip as Google Fonts source code..."
+
+    # File.delete(json_zip_file) if File.exist?(json_zip_file) 
+    # # Use generic '7z' or 'zip' command logic. Here using '7z' as standard for Linux CI
+    # system(%Q{"#{$zip}" a -tzip "#{File.basename(json_zip_file)}" "#{File.basename(json_file)}"}, chdir: "tmp") 
+    # File.rename("tmp/#{File.basename(json_zip_file)}", json_zip_file) 
 
     # Uncomment if ttx is needed in the future
     # puts "Fix Cmap..."
