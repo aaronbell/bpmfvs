@@ -46,7 +46,9 @@ jobs:
         ruby-version: '3.2'
 
     # 4. Check & Update Sources (Generic)
-    - name: Update Upstream Fonts
+    - name: Fetch Source Fonts
+      env: 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ruby update_sources.rb
 
     # 5. Commit and Push (Only if the font file actually changed)

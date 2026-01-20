@@ -715,7 +715,7 @@ end
 ver = '1.600'
 make_font('Iansui-Regular.ttf', '芫荽ㄅ字嗨注音而已', 'Iansui Bpmf', ver, true)
 make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Zihi Kai Std Bpmf', ver, true)
-
+make_font('Huninn-Regular.ttf', '粉圓ㄅ注音粉圓', 'Huninn Bpmf', ver, true)
 
 # make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
 # make_font('SourceHanSansTW-Bold.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
