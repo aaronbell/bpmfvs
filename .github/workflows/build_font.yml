@@ -103,9 +103,3 @@ jobs:
       with:
         name: Generated Fonts
         path: outputs/*.ttf
-
-    - name: Upload Source Zip
-      uses: actions/upload-artifact@v4
-      with:
-        name: Source JSON Zip
-        path: source/*.zip

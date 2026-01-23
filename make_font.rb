@@ -713,11 +713,10 @@ def make_font src_font, c_family, e_family, version, use_src_bpmf=false, spmode 
 end
 
 ver = '1.600'
-make_font('Iansui-Regular.ttf', '芫荽ㄅ字嗨注音而已', 'Iansui Bpmf', ver, true)
-make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Zihi Kai Std Bpmf', ver, true)
-make_font('Huninn-Regular.ttf', '粉圓ㄅ注音粉圓', 'Huninn Bpmf', ver, true)
+make_font('Iansui-Regular.ttf', 'ㄅ注音芫荽', 'Bpmf Iansui', ver, true)
+make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
+make_font('Huninn-Regular.ttf', 'ㄅ注音粉圓', 'Bpmf Huninn', ver, true)
 
-# make_font('ZihiKaiStd.ttf', 'ㄅ字嗨注音標楷', 'Bpmf Zihi KaiStd', ver, true)
 # make_font('SourceHanSansTW-Bold.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
 # make_font('SourceHanSansTW-ExtraLight.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
 # make_font('SourceHanSansTW-Heavy.ttf', 'ㄅ字嗨注音黑體', 'Bpmf Zihi Sans', ver, true)
@@ -731,6 +730,8 @@ make_font('Huninn-Regular.ttf', '粉圓ㄅ注音粉圓', 'Huninn Bpmf', ver, tru
 # make_font('SourceHanSerifTW-Medium.ttf', 'ㄅ字嗨注音宋體', 'Bpmf Zihi Serif', ver)
 # make_font('SourceHanSerifTW-Regular.ttf', 'ㄅ字嗨注音宋體', 'Bpmf Zihi Serif', ver)
 # make_font('SourceHanSerifTW-SemiBold.ttf', 'ㄅ字嗨注音宋體', 'Bpmf Zihi Serif', ver)
+
+# https://github.com/ButTaiwan/genryu-font
 # make_font('GenRyuMin2TW-B.ttf', 'ㄅ源流注音明體', 'Bpmf GenRyu Min', ver, true)
 # make_font('GenRyuMin2TW-EL.ttf', 'ㄅ源流注音明體', 'Bpmf GenRyu Min', ver, true)
 # make_font('GenRyuMin2TW-H.ttf', 'ㄅ源流注音明體', 'Bpmf GenRyu Min', ver, true)
@@ -738,22 +739,30 @@ make_font('Huninn-Regular.ttf', '粉圓ㄅ注音粉圓', 'Huninn Bpmf', ver, tru
 # make_font('GenRyuMin2TW-M.ttf', 'ㄅ源流注音明體', 'Bpmf GenRyu Min', ver, true)
 # make_font('GenRyuMin2TW-R.ttf', 'ㄅ源流注音明體', 'Bpmf GenRyu Min', ver, true)
 # make_font('GenRyuMin2TW-SB.ttf', 'ㄅ源流注音明體', 'Bpmf GenRyu Min', ver, true)
+
+# https://github.com/ButTaiwan/genseki-font
 # make_font('GenSekiGothic2TW-B.ttf', 'ㄅ源石注音黑體', 'Bpmf GenSeki Gothic', ver, true)
 # make_font('GenSekiGothic2TW-H.ttf', 'ㄅ源石注音黑體', 'Bpmf GenSeki Gothic', ver, true)
 # make_font('GenSekiGothic2TW-L.ttf', 'ㄅ源石注音黑體', 'Bpmf GenSeki Gothic', ver, true)
 # make_font('GenSekiGothic2TW-M.ttf', 'ㄅ源石注音黑體', 'Bpmf GenSeki Gothic', ver, true)
 # make_font('GenSekiGothic2TW-R.ttf', 'ㄅ源石注音黑體', 'Bpmf GenSeki Gothic', ver, true)
+
+# https://github.com/ButTaiwan/gensen-font
 # make_font('GenSenRounded2TW-B.ttf', 'ㄅ源泉注音圓體', 'Bpmf GenSen Rounded', ver, true)
 # make_font('GenSenRounded2TW-EL.ttf', 'ㄅ源泉注音圓體', 'Bpmf GenSen Rounded', ver, true)
 # make_font('GenSenRounded2TW-H.ttf', 'ㄅ源泉注音圓體', 'Bpmf GenSen Rounded', ver, true)
 # make_font('GenSenRounded2TW-L.ttf', 'ㄅ源泉注音圓體', 'Bpmf GenSen Rounded', ver, true)
 # make_font('GenSenRounded2TW-M.ttf', 'ㄅ源泉注音圓體', 'Bpmf GenSen Rounded', ver, true)
 # make_font('GenSenRounded2TW-R.ttf', 'ㄅ源泉注音圓體', 'Bpmf GenSen Rounded', ver, true)
+
+# https://github.com/ButTaiwan/genwan-font
 # make_font('GenWanMin2TW-EL.ttf', 'ㄅ源雲注音明體', 'Bpmf GenWan Min', ver, true)
 # make_font('GenWanMin2TW-L.ttf', 'ㄅ源雲注音明體', 'Bpmf GenWan Min', ver, true)
 # make_font('GenWanMin2TW-M.ttf', 'ㄅ源雲注音明體', 'Bpmf GenWan Min', ver, true)
 # make_font('GenWanMin2TW-R.ttf', 'ㄅ源雲注音明體', 'Bpmf GenWan Min', ver, true)
 # make_font('GenWanMin2TW-SB.ttf', 'ㄅ源雲注音明體', 'Bpmf GenWan Min', ver, true)
+
+# https://github.com/ButTaiwan/genyo-font
 # make_font('GenYoGothic2TW-B.ttf', 'ㄅ源樣注音黑體', 'Bpmf GenYo Gothic', ver, true)
 # make_font('GenYoGothic2TW-EL.ttf', 'ㄅ源樣注音黑體', 'Bpmf GenYo Gothic', ver, true)
 # make_font('GenYoGothic2TW-H.ttf', 'ㄅ源樣注音黑體', 'Bpmf GenYo Gothic', ver, true)
@@ -761,6 +770,8 @@ make_font('Huninn-Regular.ttf', '粉圓ㄅ注音粉圓', 'Huninn Bpmf', ver, tru
 # make_font('GenYoGothic2TW-M.ttf', 'ㄅ源樣注音黑體', 'Bpmf GenYo Gothic', ver, true)
 # make_font('GenYoGothic2TW-N.ttf', 'ㄅ源樣注音黑體', 'Bpmf GenYo Gothic', ver, true)
 # make_font('GenYoGothic2TW-R.ttf', 'ㄅ源樣注音黑體', 'Bpmf GenYo Gothic', ver, true)
+
+# https://github.com/ButTaiwan/genyo-font
 # make_font('GenYoMin2TW-B.ttf', 'ㄅ源樣注音明體', 'Bpmf GenYo Min', ver, true)
 # make_font('GenYoMin2TW-EL.ttf', 'ㄅ源樣注音明體', 'Bpmf GenYo Min', ver, true)
 # make_font('GenYoMin2TW-H.ttf', 'ㄅ源樣注音明體', 'Bpmf GenYo Min', ver, true)
@@ -768,8 +779,6 @@ make_font('Huninn-Regular.ttf', '粉圓ㄅ注音粉圓', 'Huninn Bpmf', ver, tru
 # make_font('GenYoMin2TW-M.ttf', 'ㄅ源樣注音明體', 'Bpmf GenYo Min', ver, true)
 # make_font('GenYoMin2TW-R.ttf', 'ㄅ源樣注音明體', 'Bpmf GenYo Min', ver, true)
 # make_font('GenYoMin2TW-SB.ttf', 'ㄅ源樣注音明體', 'Bpmf GenYo Min', ver, true)
-# make_font('Iansui-Regular.ttf', 'ㄅ注音芫荽', 'Bpmf Iansui', ver, true)
-# make_font('Huninn-Regular.ttf', 'ㄅ注音粉圓', 'Bpmf Huninn', ver, true)
 
 # make_font('GenWanMin2TW-R.ttf', 'ㄅ字嗨注音而已', 'Bpmf Zihi Only', ver, false, 'none')
 # make_font('GenWanMin2TW-R.ttf', 'ㄅ字嗨注音加框', 'Bpmf Zihi Box', ver, false, 'box')
