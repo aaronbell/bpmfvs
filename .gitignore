@@ -2,7 +2,6 @@ old/
 encoding/
 stdkai/
 releases/
-Bpmf[hH]*
 tmp/*
 BopomofoSmall-Regular.ttf
 f_bpmfsrc.js
